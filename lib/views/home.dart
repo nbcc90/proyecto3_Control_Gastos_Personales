@@ -231,7 +231,9 @@ class _HomePageState extends State<HomePage> {
           CardPage(income: totalIncome, expense: totalExpense),
           const SizedBox(height: 16),
           Expanded(
-            child: PieChart(
+            child: filtered.isEmpty
+              ? const Center(child: Text('Sin movimientos'))
+              : PieChart(
               PieChartData(
                 sectionsSpace: 2,
                 centerSpaceRadius: 40,

@@ -31,7 +31,7 @@ class MyApp extends StatelessWidget {
         final goingToLogin = state.matchedLocation == '/login';
         final goingToRegister = state.matchedLocation == '/register';
         if (!isLoggedIn && !goingToLogin && !goingToRegister) return '/login';
-        if (isLoggedIn && goingToLogin) return '/home';
+        if (isLoggedIn && goingToLogin) return '/home/:user';
         return null;
       },
       routes: [

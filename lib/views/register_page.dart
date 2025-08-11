@@ -168,7 +168,7 @@ class RegistroPage extends StatelessWidget {
                               'password',
                               passwordController.text.trim(),
                             );
-                            context.goNamed('login');
+                            context.pop();
                           }
                         },
                         child: const Text(
