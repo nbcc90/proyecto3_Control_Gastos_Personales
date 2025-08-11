@@ -1,47 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:gastos_personales/enums/movement_type.dart';
+import 'package:gastos_personales/models/movement.dart';
+import 'package:gastos_personales/views/cards.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-enum MovementType { income, expense }
-
-class Movement {
-  final String id;
-  final double amount;
-  final String category;
-  final DateTime date;
-  final MovementType type;
-  final String? note;
-
-  Movement({
-    required this.id,
-    required this.amount,
-    required this.category,
-    required this.date,
-    required this.type,
-    this.note,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'amount': amount,
-    'category': category,
-    'date': date.toIso8601String(),
-    'type': type.name,
-    'note': note,
-  };
-
-  factory Movement.fromJson(Map<String, dynamic> json) => Movement(
-    id: json['id'] as String,
-    amount: (json['amount'] as num).toDouble(),
-    category: json['category'] as String,
-    date: DateTime.parse(json['date'] as String),
-    type: (json['type'] as String) == 'income'
-        ? MovementType.income
-        : MovementType.expense,
-    note: json['note'] as String?,
-  );
-}
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -176,7 +140,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildMovementsPage(BuildContext context) {
     return Column(
       children: [
-        _TotalsCard(income: totalIncome, expense: totalExpense),
+        CardPage(income: totalIncome, expense: totalExpense),
         Expanded(
           child: filtered.isEmpty
               ? const Center(child: Text('Sin movimientos'))
@@ -249,7 +213,7 @@ class _HomePageState extends State<HomePage> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _TotalsCard(income: totalIncome, expense: totalExpense),
+          CardPage(income: totalIncome, expense: totalExpense),
           const SizedBox(height: 16),
           Expanded(
             child: PieChart(
@@ -260,12 +224,16 @@ class _HomePageState extends State<HomePage> {
                   PieChartSectionData(
                     value: income,
                     title: 'Ingresos',
+                    titleStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     radius: 90,
+                    color: const Color.fromARGB(255, 129, 204, 132)
                   ),
                   PieChartSectionData(
                     value: expense,
                     title: 'Egresos',
+                    titleStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     radius: 90,
+                    color: const Color.fromARGB(255, 228, 107, 107)
                   ),
                 ],
               ),
@@ -418,42 +386,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _TotalsCard extends StatelessWidget {
-  final double income;
-  final double expense;
-  const _TotalsCard({required this.income, required this.expense});
-
-  @override
-  Widget build(BuildContext context) {
-    final balance = income - expense;
-    return Card(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _kpi('Ingresos', income),
-            _kpi('Egresos', expense),
-            _kpi('Balance', balance),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _kpi(String label, double value) {
-    return Column(
-      children: [
-        Text(label, style: const TextStyle(color: Colors.grey)),
-        const SizedBox(height: 4),
-        Text('L. ${value.toStringAsFixed(2)}',
-            style: const TextStyle(fontWeight: FontWeight.w700)),
-      ],
     );
   }
 }
