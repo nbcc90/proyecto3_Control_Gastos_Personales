@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gastos_personales/views/register_page.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:go_router/go_router.dart';
 
-import 'views/login.dart';
+import 'views/login_page.dart';
 import 'views/home.dart';
 
 void main() async {
@@ -28,7 +29,8 @@ class MyApp extends StatelessWidget {
       redirect: (context, state) {
         final isLoggedIn = box.read('isLoggedIn') ?? false;
         final goingToLogin = state.matchedLocation == '/login';
-        if (!isLoggedIn && !goingToLogin) return '/login';
+        final goingToRegister = state.matchedLocation == '/register';
+        if (!isLoggedIn && !goingToLogin && !goingToRegister) return '/login';
         if (isLoggedIn && goingToLogin) return '/home';
         return null;
       },
@@ -36,12 +38,20 @@ class MyApp extends StatelessWidget {
         GoRoute(
           path: '/login',
           name: 'login',
-          builder: (context, state) => const LoginPage(),
+          builder: (context, state) => LoginPage(),
         ),
         GoRoute(
-          path: '/home',
+          path: '/register',
+          name: 'register',
+          builder: (context, state) => RegistroPage(),
+        ),
+        GoRoute(
+          path: '/home/:user',
           name: 'home',
-          builder: (context, state) => const HomePage(),
+          builder: (context, state) {
+            String user = state.pathParameters['user']!;
+            return HomePage(user: user);
+          }
         ),
       ],
     );

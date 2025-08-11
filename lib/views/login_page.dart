@@ -207,7 +207,7 @@ class LoginPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   TextButton(
-                    onPressed: () => context.goNamed('register'),
+                    onPressed: () => context.push('/register'),
                     child: const Text(
                       '¿No tienes cuenta? Regístrate',
                       style: TextStyle(color: Colors.white),

@@ -5,10 +5,13 @@ import 'package:gastos_personales/models/movement.dart';
 import 'package:gastos_personales/views/cards.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:go_router/go_router.dart';
 
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, required this.user});
+
+  final String user;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -96,6 +99,18 @@ class _HomePageState extends State<HomePage> {
             }),
             tooltip: 'Egresos',
             icon: const Icon(Icons.arrow_upward_rounded),
+          ),
+          IconButton(
+            onPressed: () => setState(() {
+              //borra datos de sesion
+              GetStorage().remove("user");
+              GetStorage().remove("isLoggedIn");
+
+              // ir a login
+              context.goNamed('login');
+            }),
+            tooltip: 'Salir',
+            icon: const Icon(Icons.logout, color: Colors.red,),
           ),
         ],
       ),
