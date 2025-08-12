@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:gastos_personales/enums/movement_type.dart';
 import 'package:gastos_personales/models/movement.dart';
 import 'package:gastos_personales/views/cards.dart';
+import 'package:gastos_personales/views/indicator.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:go_router/go_router.dart';
-
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.user});
@@ -43,8 +43,11 @@ class _HomePageState extends State<HomePage> {
     } catch (_) {
       // si guardaste lista directa sin json, fallback:
       if (raw is List) {
-        setState(() =>
-        items = raw.map((e) => Movement.fromJson(Map<String, dynamic>.from(e))).toList());
+        setState(
+          () => items = raw
+              .map((e) => Movement.fromJson(Map<String, dynamic>.from(e)))
+              .toList(),
+        );
       }
     }
   }
@@ -110,7 +113,7 @@ class _HomePageState extends State<HomePage> {
               context.goNamed('login');
             }),
             tooltip: 'Salir',
-            icon: const Icon(Icons.logout, color: Colors.red,),
+            icon: const Icon(Icons.logout, color: Colors.red),
           ),
         ],
       ),
@@ -119,18 +122,15 @@ class _HomePageState extends State<HomePage> {
         controller: pageController,
         physics: const NeverScrollableScrollPhysics(),
         onPageChanged: (i) => setState(() => currentIndex = i),
-        children: [
-          _buildMovementsPage(context),
-          _buildChartsPage(context),
-        ],
+        children: [_buildMovementsPage(context), _buildChartsPage(context)],
       ),
 
       floatingActionButton: currentIndex == 0
           ? FloatingActionButton.extended(
-        onPressed: () => _openAddMovementSheet(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Agregar'),
-      )
+              onPressed: () => _openAddMovementSheet(context),
+              icon: const Icon(Icons.add),
+              label: const Text('Agregar'),
+            )
           : null,
 
       bottomNavigationBar: BottomNavigationBar(
@@ -144,8 +144,14 @@ class _HomePageState extends State<HomePage> {
           );
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Movimientos'),
-          BottomNavigationBarItem(icon: Icon(Icons.pie_chart), label: 'Gráficas'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list_alt),
+            label: 'Movimientos',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.pie_chart),
+            label: 'Gráficas',
+          ),
         ],
       ),
     );
@@ -160,60 +166,70 @@ class _HomePageState extends State<HomePage> {
           child: filtered.isEmpty
               ? const Center(child: Text('Sin movimientos'))
               : ListView.separated(
-            itemCount: filtered.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (_, i) {
-              final m = filtered[i];
-              final sign = m.type == MovementType.income ? '+' : '-';
-              final color =
-              m.type == MovementType.income ? Colors.green : Colors.red;
+                  itemCount: filtered.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (_, i) {
+                    final m = filtered[i];
+                    final sign = m.type == MovementType.income ? '+' : '-';
+                    final color = m.type == MovementType.income
+                        ? Colors.green
+                        : Colors.red;
 
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: color.withOpacity(.12),
-                  child: Icon(
-                    m.type == MovementType.income
-                        ? Icons.trending_up
-                        : Icons.trending_down,
-                    color: color,
-                  ),
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: color.withOpacity(.12),
+                        child: Icon(
+                          m.type == MovementType.income
+                              ? Icons.trending_up
+                              : Icons.trending_down,
+                          color: color,
+                        ),
+                      ),
+                      title: Text(m.category),
+                      subtitle: Text(
+                        '${m.date.day}/${m.date.month}/${m.date.year}${m.note != null && m.note!.isNotEmpty ? ' · ${m.note}' : ''}',
+                      ),
+                      trailing: Text(
+                        '$sign L. ${m.amount.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          color: color,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onLongPress: () async {
+                        final ok =
+                            await showDialog<bool>(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                title: const Text('Eliminar'),
+                                content: const Text(
+                                  '¿Deseas eliminar este movimiento?',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text('Cancelar'),
+                                  ),
+                                  FilledButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: const Text('Eliminar'),
+                                  ),
+                                ],
+                              ),
+                            ) ??
+                            false;
+                        if (ok) {
+                          setState(
+                            () => items.removeWhere((e) => e.id == m.id),
+                          );
+                          await _save();
+                        }
+                      },
+                    );
+                  },
                 ),
-                title: Text(m.category),
-                subtitle: Text(
-                    '${m.date.day}/${m.date.month}/${m.date.year}${m.note != null && m.note!.isNotEmpty ? ' · ${m.note}' : ''}'),
-                trailing: Text(
-                  '$sign L. ${m.amount.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                onLongPress: () async {
-                  final ok = await showDialog<bool>(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: const Text('Eliminar'),
-                      content: const Text(
-                          '¿Deseas eliminar este movimiento?'),
-                      actions: [
-                        TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text('Cancelar')),
-                        FilledButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            child: const Text('Eliminar')),
-                      ],
-                    ),
-                  ) ??
-                      false;
-                  if (ok) {
-                    setState(() => items.removeWhere((e) => e.id == m.id));
-                    await _save();
-                  }
-                },
-              );
-            },
-          ),
         ),
       ],
     );
@@ -230,30 +246,55 @@ class _HomePageState extends State<HomePage> {
         children: [
           CardPage(income: totalIncome, expense: totalExpense),
           const SizedBox(height: 16),
-          Expanded(
-            child: filtered.isEmpty
-              ? const Center(child: Text('Sin movimientos'))
-              : PieChart(
-              PieChartData(
-                sectionsSpace: 2,
-                centerSpaceRadius: 40,
-                sections: [
-                  PieChartSectionData(
-                    value: income,
-                    title: 'Ingresos',
-                    titleStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    radius: 90,
-                    color: const Color.fromARGB(255, 129, 204, 132)
-                  ),
-                  PieChartSectionData(
-                    value: expense,
-                    title: 'Egresos',
-                    titleStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    radius: 90,
-                    color: const Color.fromARGB(255, 228, 107, 107)
-                  ),
-                ],
-              ),
+          AspectRatio(
+            aspectRatio: 1.3,
+            child: Row(
+              children: <Widget>[
+                const SizedBox(height: 18),
+                Expanded(
+                  child: filtered.isEmpty
+                      ? const Center(child: Text('Sin movimientos'))
+                      : PieChart(
+                          PieChartData(
+                            sectionsSpace: 2,
+                            centerSpaceRadius: 40,
+                            sections: [
+                              PieChartSectionData(
+                                value: income,
+                                showTitle: false,
+                                radius: 90,
+                                color: Colors.green,
+                              ),
+                              PieChartSectionData(
+                                value: expense,
+                                showTitle: false,
+                                radius: 90,
+                                color: Colors.red,
+                              ),
+                            ],
+                          ),
+                        ),
+                ),
+                const Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Indicator(
+                      color: Colors.green,
+                      text: 'Ingresos',
+                      isSquare: false,
+                    ),
+                    SizedBox(height: 4),
+                    Indicator(
+                      color: Colors.red,
+                      text: 'Egresos',
+                      isSquare: false,
+                    ),
+                    SizedBox(height: 4),
+                  ],
+                ),
+                const SizedBox(width: 28),
+              ],
             ),
           ),
         ],
@@ -284,8 +325,10 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Nuevo movimiento',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                const Text(
+                  'Nuevo movimiento',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
                 const SizedBox(height: 12),
 
                 // Tipo
@@ -294,7 +337,8 @@ class _HomePageState extends State<HomePage> {
                     ChoiceChip(
                       label: const Text('Egreso'),
                       selected: type == MovementType.expense,
-                      onSelected: (_) => setS(() => type = MovementType.expense),
+                      onSelected: (_) =>
+                          setS(() => type = MovementType.expense),
                     ),
                     const SizedBox(width: 8),
                     ChoiceChip(
@@ -309,8 +353,9 @@ class _HomePageState extends State<HomePage> {
                 // Monto
                 TextField(
                   controller: amountCtrl,
-                  keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: const InputDecoration(
                     labelText: 'Monto',
                     prefixIcon: Icon(Icons.attach_money),
@@ -336,8 +381,7 @@ class _HomePageState extends State<HomePage> {
                     Expanded(
                       child: OutlinedButton.icon(
                         icon: const Icon(Icons.date_range),
-                        label: Text(
-                            '${date.day}/${date.month}/${date.year}'),
+                        label: Text('${date.day}/${date.month}/${date.year}'),
                         onPressed: () async {
                           final picked = await showDatePicker(
                             context: context,
@@ -371,18 +415,23 @@ class _HomePageState extends State<HomePage> {
                     icon: const Icon(Icons.save),
                     label: const Text('Guardar'),
                     onPressed: () async {
-                      final amount = double.tryParse(amountCtrl.text.trim()) ?? 0;
+                      final amount =
+                          double.tryParse(amountCtrl.text.trim()) ?? 0;
                       final category = categoryCtrl.text.trim();
 
                       if (amount <= 0 || category.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                              content: Text('Monto > 0 y categoría son obligatorios')),
+                            content: Text(
+                              'Monto > 0 y categoría son obligatorios',
+                            ),
+                          ),
                         );
                         return;
                       }
 
-                      final id = DateTime.now().millisecondsSinceEpoch.toString();
+                      final id = DateTime.now().millisecondsSinceEpoch
+                          .toString();
                       final newItem = Movement(
                         id: id,
                         amount: amount,
