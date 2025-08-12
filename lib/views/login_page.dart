@@ -5,15 +5,15 @@ import 'package:go_router/go_router.dart';
 import 'package:gastos_personales/models/user_store.dart';
 
 class LoginController extends GetxController {
-  final userController = TextEditingController(text: 'test@test');
-  final passwordController = TextEditingController(text: '1234');
+  final userController = TextEditingController();
+  final passwordController = TextEditingController();
   final obscurePassword = true.obs;
 
   void togglePasswordVisibility() => obscurePassword.toggle();
 
   Future<void> login(BuildContext context) async {
     final email = userController.text.trim();
-    final pass  = passwordController.text.trim();
+    final pass = passwordController.text.trim();
 
     // Validaciones básicas
     if (email.isEmpty || pass.isEmpty) {
@@ -21,8 +21,15 @@ class LoginController extends GetxController {
         context: context,
         builder: (_) => AlertDialog(
           title: const Text('Error'),
-          content: const Text('El usuario y la contraseña no pueden estar vacíos'),
-          actions: [TextButton(onPressed: () => context.pop(), child: const Text('Entiendo'))],
+          content: const Text(
+            'El usuario y la contraseña no pueden estar vacíos',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => context.pop(),
+              child: const Text('Entiendo'),
+            ),
+          ],
         ),
       );
       return;
@@ -30,7 +37,10 @@ class LoginController extends GetxController {
 
     if (!email.contains('@')) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('El correo no es válido'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('El correo no es válido'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -116,42 +126,64 @@ class LoginPage extends StatelessWidget {
                     controller: controller.userController,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    style: const TextStyle(color: Color.fromRGBO(255, 255, 255, 0.8)),
+                    style: const TextStyle(
+                      color: Color.fromRGBO(255, 255, 255, 0.8),
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Correo',
-                      labelStyle: const TextStyle(color: Color.fromRGBO(255, 255, 255, 0.8)),
+                      labelStyle: const TextStyle(
+                        color: Color.fromRGBO(255, 255, 255, 0.8),
+                      ),
                       hintText: 'Ingrese su correo',
-                      hintStyle: const TextStyle(color: Color.fromRGBO(255, 255, 255, 0.6)),
+                      hintStyle: const TextStyle(
+                        color: Color.fromRGBO(255, 255, 255, 0.6),
+                      ),
                       enabledBorder: enabledBorderStyle,
                       focusedBorder: focusedBorderStyle,
-                      prefixIcon: const Icon(Icons.email_outlined, color: Color.fromRGBO(255, 255, 255, 0.8)),
+                      prefixIcon: const Icon(
+                        Icons.email_outlined,
+                        color: Color.fromRGBO(255, 255, 255, 0.8),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 30),
 
-                  Obx(() => TextField(
-                    controller: controller.passwordController,
-                    obscureText: controller.obscurePassword.value,
-                    keyboardType: TextInputType.visiblePassword,
-                    textInputAction: TextInputAction.done,
-                    style: const TextStyle(color: Color.fromRGBO(255, 255, 255, 0.8)),
-                    decoration: InputDecoration(
-                      labelText: 'Contraseña',
-                      labelStyle: const TextStyle(color: Color.fromRGBO(255, 255, 255, 0.8)),
-                      hintText: 'Ingrese su contraseña',
-                      hintStyle: const TextStyle(color: Color.fromRGBO(255, 255, 255, 0.6)),
-                      enabledBorder: enabledBorderStyle,
-                      focusedBorder: focusedBorderStyle,
-                      prefixIcon: const Icon(Icons.password_rounded, color: Color.fromRGBO(255, 255, 255, 0.8)),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          controller.obscurePassword.value ? Icons.remove_red_eye : Icons.visibility_off,
-                          color: const Color.fromRGBO(255, 255, 255, 0.8),
+                  Obx(
+                    () => TextField(
+                      controller: controller.passwordController,
+                      obscureText: controller.obscurePassword.value,
+                      keyboardType: TextInputType.visiblePassword,
+                      textInputAction: TextInputAction.done,
+                      style: const TextStyle(
+                        color: Color.fromRGBO(255, 255, 255, 0.8),
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Contraseña',
+                        labelStyle: const TextStyle(
+                          color: Color.fromRGBO(255, 255, 255, 0.8),
                         ),
-                        onPressed: controller.togglePasswordVisibility,
+                        hintText: 'Ingrese su contraseña',
+                        hintStyle: const TextStyle(
+                          color: Color.fromRGBO(255, 255, 255, 0.6),
+                        ),
+                        enabledBorder: enabledBorderStyle,
+                        focusedBorder: focusedBorderStyle,
+                        prefixIcon: const Icon(
+                          Icons.password_rounded,
+                          color: Color.fromRGBO(255, 255, 255, 0.8),
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            controller.obscurePassword.value
+                                ? Icons.remove_red_eye
+                                : Icons.visibility_off,
+                            color: const Color.fromRGBO(255, 255, 255, 0.8),
+                          ),
+                          onPressed: controller.togglePasswordVisibility,
+                        ),
                       ),
                     ),
-                  )),
+                  ),
                   const SizedBox(height: 30),
 
                   SizedBox(
@@ -159,10 +191,17 @@ class LoginPage extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: () => controller.login(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(255, 198, 244, 32),
+                        backgroundColor: const Color.fromARGB(
+                          255,
+                          198,
+                          244,
+                          32,
+                        ),
                         foregroundColor: const Color.fromARGB(255, 31, 30, 30),
                         padding: const EdgeInsets.all(14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         elevation: 5,
                       ),
                       child: const Text('Iniciar Sesión'),
@@ -172,7 +211,10 @@ class LoginPage extends StatelessWidget {
 
                   TextButton(
                     onPressed: () => context.push('/register'),
-                    child: const Text('¿No tienes cuenta? Regístrate', style: TextStyle(color: Colors.white)),
+                    child: const Text(
+                      '¿No tienes cuenta? Regístrate',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               ),
