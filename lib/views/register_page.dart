@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:gastos_personales/models/user_store.dart';
 class RegistroPage extends StatelessWidget {
   RegistroPage({super.key});
 
@@ -150,25 +150,25 @@ class RegistroPage extends StatelessWidget {
                           backgroundColor: Colors.greenAccent,
                           minimumSize: const Size(200, 50),
                         ),
-                        onPressed: () {
+                        onPressed: () async {
                           if (_validarDatos(context)) {
-                            GetStorage().write(
-                              'nombre',
-                              nombreController.text.trim(),
+                            final user = AppUser(
+                              name: nombreController.text.trim(),
+                              email: userController.text.trim(),
+                              phone: telefonoController.text.trim(),
+                              password: passwordController.text.trim(),
                             );
-                            GetStorage().write(
-                              'user',
-                              userController.text.trim(),
+
+                            final error = await UserStore.register(user);
+                            if (error != null) {
+                              _mostrarError(context, error);
+                              return;
+                            }
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Usuario registrado con éxito')),
                             );
-                            GetStorage().write(
-                              'telefono',
-                              telefonoController.text.trim(),
-                            );
-                            GetStorage().write(
-                              'password',
-                              passwordController.text.trim(),
-                            );
-                            context.pop();
+                            context.pop(); // volver al login
                           }
                         },
                         child: const Text(
