@@ -24,6 +24,8 @@ class _HomePageState extends State<HomePage> {
 
   List<Movement> items = [];
   String filterType = 'ALL'; // ALL | INCOME | EXPENSE
+  DateTime? fromDate;
+  DateTime? toDate;
 
   @override
   void initState() {
@@ -44,7 +46,7 @@ class _HomePageState extends State<HomePage> {
       // si guardaste lista directa sin json, fallback:
       if (raw is List) {
         setState(
-          () => items = raw
+              () => items = raw
               .map((e) => Movement.fromJson(Map<String, dynamic>.from(e)))
               .toList(),
         );
@@ -66,14 +68,27 @@ class _HomePageState extends State<HomePage> {
       .fold(0.0, (a, b) => a + b.amount);
 
   List<Movement> get filtered {
+    List<Movement> filteredItems = items;
+
+    // Filtrado por tipo (ingreso/egreso)
     switch (filterType) {
       case 'INCOME':
-        return items.where((e) => e.type == MovementType.income).toList();
+        filteredItems = filteredItems.where((e) => e.type == MovementType.income).toList();
+        break;
       case 'EXPENSE':
-        return items.where((e) => e.type == MovementType.expense).toList();
-      default:
-        return items;
+        filteredItems = filteredItems.where((e) => e.type == MovementType.expense).toList();
+        break;
     }
+
+    // Filtrado por fechas
+    if (fromDate != null) {
+      filteredItems = filteredItems.where((e) => e.date.isAfter(fromDate!)).toList();
+    }
+    if (toDate != null) {
+      filteredItems = filteredItems.where((e) => e.date.isBefore(toDate!)).toList();
+    }
+
+    return filteredItems;
   }
 
   @override
@@ -82,34 +97,79 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('Gastos personales'),
         actions: [
+          // Limpiar todos los filtros (fecha y tipo)
           IconButton(
-            onPressed: () => setState(() {
-              filterType = 'ALL';
-            }),
-            tooltip: 'Todos',
+            onPressed: () {
+              setState(() {
+                // Limpiar todos los filtros (fecha y tipo)
+                fromDate = null;
+                toDate = null;
+                filterType = 'ALL';  // Reiniciar el filtro de tipo
+              });
+            },
+            tooltip: 'Limpiar filtros',
             icon: const Icon(Icons.filter_alt_off),
           ),
           IconButton(
             onPressed: () => setState(() {
-              filterType = 'INCOME';
+              filterType = 'INCOME';  // Solo ingresos
             }),
             tooltip: 'Ingresos',
             icon: const Icon(Icons.arrow_downward_rounded),
           ),
           IconButton(
             onPressed: () => setState(() {
-              filterType = 'EXPENSE';
+              filterType = 'EXPENSE'; // Solo egresos
             }),
             tooltip: 'Egresos',
             icon: const Icon(Icons.arrow_upward_rounded),
           ),
+          // Filtro de fecha de inicio
+          IconButton(
+            onPressed: () async {
+              final DateTime? pickedFrom = await showDatePicker(
+                context: context,
+                initialDate: fromDate ?? DateTime.now(),
+                firstDate: DateTime(2000),
+                lastDate: DateTime(2101),
+              );
+
+              if (pickedFrom != null && pickedFrom != fromDate) {
+                setState(() {
+                  fromDate = pickedFrom;
+                });
+              }
+            },
+            tooltip: 'Filtrar por fecha de inicio',
+            icon: const Icon(Icons.calendar_today),
+          ),
+          // Filtro de fecha de fin
+          IconButton(
+            onPressed: () async {
+              final DateTime? pickedTo = await showDatePicker(
+                context: context,
+                initialDate: toDate ?? DateTime.now(),
+                firstDate: DateTime(2000),
+                lastDate: DateTime(2101),
+              );
+
+              if (pickedTo != null && pickedTo != toDate) {
+                setState(() {
+                  toDate = pickedTo;
+                });
+              }
+            },
+            tooltip: 'Filtrar por fecha de fin',
+            icon: const Icon(Icons.calendar_today_outlined),
+          ),
+          // Cerrar sesión
           IconButton(
             onPressed: () => setState(() {
-              //borra datos de sesion
+              // Borra datos de sesión
               GetStorage().remove("user");
               GetStorage().remove("isLoggedIn");
 
-              // ir a login
+              // Redirige a login
               context.goNamed('login');
             }),
             tooltip: 'Salir',
@@ -117,22 +177,19 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-
       body: PageView(
         controller: pageController,
         physics: const NeverScrollableScrollPhysics(),
         onPageChanged: (i) => setState(() => currentIndex = i),
         children: [_buildMovementsPage(context), _buildChartsPage(context)],
       ),
-
       floatingActionButton: currentIndex == 0
           ? FloatingActionButton.extended(
-              onPressed: () => _openAddMovementSheet(context),
-              icon: const Icon(Icons.add),
-              label: const Text('Agregar'),
-            )
+        onPressed: () => _openAddMovementSheet(context),
+        icon: const Icon(Icons.add),
+        label: const Text('Agregar'),
+      )
           : null,
-
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
         onTap: (i) {
@@ -166,70 +223,70 @@ class _HomePageState extends State<HomePage> {
           child: filtered.isEmpty
               ? const Center(child: Text('Sin movimientos'))
               : ListView.separated(
-                  itemCount: filtered.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (_, i) {
-                    final m = filtered[i];
-                    final sign = m.type == MovementType.income ? '+' : '-';
-                    final color = m.type == MovementType.income
-                        ? Colors.green
-                        : Colors.red;
+            itemCount: filtered.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (_, i) {
+              final m = filtered[i];
+              final sign = m.type == MovementType.income ? '+' : '-';
+              final color = m.type == MovementType.income
+                  ? Colors.green
+                  : Colors.red;
 
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: color.withOpacity(.12),
-                        child: Icon(
-                          m.type == MovementType.income
-                              ? Icons.trending_up
-                              : Icons.trending_down,
-                          color: color,
-                        ),
-                      ),
-                      title: Text(m.category),
-                      subtitle: Text(
-                        '${m.date.day}/${m.date.month}/${m.date.year}${m.note != null && m.note!.isNotEmpty ? ' · ${m.note}' : ''}',
-                      ),
-                      trailing: Text(
-                        '$sign L. ${m.amount.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          color: color,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      onLongPress: () async {
-                        final ok =
-                            await showDialog<bool>(
-                              context: context,
-                              builder: (_) => AlertDialog(
-                                title: const Text('Eliminar'),
-                                content: const Text(
-                                  '¿Deseas eliminar este movimiento?',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, false),
-                                    child: const Text('Cancelar'),
-                                  ),
-                                  FilledButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, true),
-                                    child: const Text('Eliminar'),
-                                  ),
-                                ],
-                              ),
-                            ) ??
-                            false;
-                        if (ok) {
-                          setState(
-                            () => items.removeWhere((e) => e.id == m.id),
-                          );
-                          await _save();
-                        }
-                      },
-                    );
-                  },
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: color.withOpacity(.12),
+                  child: Icon(
+                    m.type == MovementType.income
+                        ? Icons.trending_up
+                        : Icons.trending_down,
+                    color: color,
+                  ),
                 ),
+                title: Text(m.category),
+                subtitle: Text(
+                  '${m.date.day}/${m.date.month}/${m.date.year}${m.note != null && m.note!.isNotEmpty ? ' · ${m.note}' : ''}',
+                ),
+                trailing: Text(
+                  '$sign L. ${m.amount.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                onLongPress: () async {
+                  final ok =
+                      await showDialog<bool>(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: const Text('Eliminar'),
+                          content: const Text(
+                            '¿Deseas eliminar este movimiento?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(context, false),
+                              child: const Text('Cancelar'),
+                            ),
+                            FilledButton(
+                              onPressed: () =>
+                                  Navigator.pop(context, true),
+                              child: const Text('Eliminar'),
+                            ),
+                          ],
+                        ),
+                      ) ??
+                          false;
+                  if (ok) {
+                    setState(
+                          () => items.removeWhere((e) => e.id == m.id),
+                    );
+                    await _save();
+                  }
+                },
+              );
+            },
+          ),
         ),
       ],
     );
@@ -255,25 +312,25 @@ class _HomePageState extends State<HomePage> {
                   child: filtered.isEmpty
                       ? const Center(child: Text('Sin movimientos'))
                       : PieChart(
-                          PieChartData(
-                            sectionsSpace: 2,
-                            centerSpaceRadius: 40,
-                            sections: [
-                              PieChartSectionData(
-                                value: income,
-                                showTitle: false,
-                                radius: 90,
-                                color: Colors.green,
-                              ),
-                              PieChartSectionData(
-                                value: expense,
-                                showTitle: false,
-                                radius: 90,
-                                color: Colors.red,
-                              ),
-                            ],
-                          ),
+                    PieChartData(
+                      sectionsSpace: 2,
+                      centerSpaceRadius: 40,
+                      sections: [
+                        PieChartSectionData(
+                          value: income,
+                          showTitle: false,
+                          radius: 90,
+                          color: Colors.green,
                         ),
+                        PieChartSectionData(
+                          value: expense,
+                          showTitle: false,
+                          radius: 90,
+                          color: Colors.red,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 const Column(
                   mainAxisAlignment: MainAxisAlignment.end,
